@@ -120,6 +120,25 @@ def predecir_local(df_zonas, artefacto, lat_raw, lon_raw, dia_semana, hora):
         nivel_est = str(clases[idx])
         confianza = round(float(probas[idx]), 4)
         modelo = artefacto.get("modelo_nombre", "RandomForest")
+
+        # Ajuste dinámico por franja horaria y fin de semana sobre la predicción espacial del bosque
+        es_madrugada = hora in {0, 1, 2, 3, 4, 5}
+        es_noche = (hora >= 20) or (hora <= 6)
+
+        if es_madrugada and es_fds == 1 and nivel_est == "Medio":
+            nivel_est = "Alto"
+            confianza = round(min(0.95, confianza + 0.06), 4)
+        elif not es_noche and nivel_est == "Alto":
+            nivel_est = "Medio"
+            confianza = round(max(0.60, confianza - 0.08), 4)
+        elif not es_noche and nivel_est == "Medio":
+            nivel_est = "Bajo"
+            confianza = round(max(0.62, confianza - 0.05), 4)
+        elif es_noche:
+            # Variación leve de probabilidad según cercanía al pico nocturno (00-03 hs)
+            delta_hora = 0.03 if es_madrugada else (0.015 if es_fds else 0.0)
+            confianza = round(min(0.99, confianza + delta_hora), 4)
+
     else:
         nivel_est, confianza, modelo = nivel_base, 0.75, "HeuristicaFallback"
 
