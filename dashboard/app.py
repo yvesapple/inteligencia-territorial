@@ -117,7 +117,7 @@ def predecir_local(df_zonas, artefacto, lat_raw, lon_raw, dia_semana, hora):
             probas += np.array(arbol["value"][nodo], dtype=float)
         probas /= len(artefacto["arboles"])
         idx = int(np.argmax(probas))
-        nivel_est = str(clases[idx])
+        nivel_est = str(clases[idx]).strip().capitalize()
         confianza = round(float(probas[idx]), 4)
         modelo = artefacto.get("modelo_nombre", "RandomForest")
 
@@ -135,7 +135,6 @@ def predecir_local(df_zonas, artefacto, lat_raw, lon_raw, dia_semana, hora):
             nivel_est = "Bajo"
             confianza = round(max(0.62, confianza - 0.05), 4)
         elif es_noche:
-            # Variación leve de probabilidad según cercanía al pico nocturno (00-03 hs)
             delta_hora = 0.03 if es_madrugada else (0.015 if es_fds else 0.0)
             confianza = round(min(0.99, confianza + delta_hora), 4)
 
