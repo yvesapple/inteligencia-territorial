@@ -234,16 +234,19 @@ with tab_pred:
         st.caption("Hacé clic sobre cualquier punto del mapa para mover el marcador y evaluar esa celda.")
         m = folium.Map(location=[lat_in, lon_in], zoom_start=13, tiles="OpenStreetMap")
 
-        top_celdas = df_zonas[df_zonas["delitos_nocturnos"] > 0].nlargest(120, "delitos_nocturnos")
-        for _, r in top_celdas.iterrows():
-            color = "#d9534f" if str(r.get("nivel_incidencia")) == "Alto" else "#f0ad4e"
+        celdas_activas = df_zonas[df_zonas["delitos_nocturnos"] > 0]
+        colores_nivel = {"Alto": "#d9534f", "Medio": "#f0ad4e", "Bajo": "#5cb85c"}
+
+        for _, r in celdas_activas.iterrows():
+            nivel_celda = str(r.get("nivel_incidencia", "Bajo")).strip().capitalize()
+            color = colores_nivel.get(nivel_celda, "#5cb85c")
             folium.Rectangle(
                 bounds=[[r["lat_min"], r["lon_min"]], [r["lat_max"], r["lon_max"]]],
                 color=color,
                 weight=1,
                 fill=True,
-                fill_opacity=0.25,
-                tooltip=f"Zona {r.get('zona_id', '')} | Delitos nocturnos: {int(r['delitos_nocturnos'])}",
+                fill_opacity=0.28,
+                tooltip=f"Zona {r.get('zona_id', '')} | Nivel: {nivel_celda} | Delitos nocturnos: {int(r['delitos_nocturnos'])}",
             ).add_to(m)
 
         folium.Marker(
