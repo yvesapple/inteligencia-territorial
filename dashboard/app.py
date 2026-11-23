@@ -156,6 +156,22 @@ def predecir_apify(token, actor_id, zona_id, dia_semana, hora):
     return items[0]
 
 
+# --- INICIALIZACIÓN DE ESTADO PARA EL MAPA Y COORDENADAS ---
+if "lat_sel" not in st.session_state:
+    st.session_state["lat_sel"] = -34.5880
+if "lon_sel" not in st.session_state:
+    st.session_state["lon_sel"] = -58.4160
+if "ultimo_clic" not in st.session_state:
+    st.session_state["ultimo_clic"] = None
+
+
+def actualizar_desde_referencia():
+    lat_r, lon_r = ZONAS_REFERENCIA[st.session_state["zona_ref_box"]]
+    st.session_state["lat_sel"] = lat_r
+    st.session_state["lon_sel"] = lon_r
+    st.session_state["ultimo_resultado"] = None
+
+
 # --- INTERFAZ PRINCIPAL ---
 df_zonas = cargar_datos_locales()
 artefacto = cargar_modelo_local()
@@ -167,7 +183,7 @@ with st.sidebar:
     st.header("⚙️ Motor de Inferencia")
     modo = st.radio(
         "Modo de ejecución:",
-        ["⚡ Local Instantáneo (Demo rápida)", "☁️ API Apify en Vivo (Producción)"],
+        ["⚡ Inferencia Local (Baja Latencia)", "☁️ API Apify en Vivo (Cloud)"],
     )
     apify_token = ""
     apify_actor_id = ""
@@ -177,11 +193,15 @@ with st.sidebar:
 
     st.divider()
     st.header("📍 Parámetros de Consulta")
-    punto_ref = st.selectbox("Zona de referencia rápida:", list(ZONAS_REFERENCIA.keys()))
-    lat_def, lon_def = ZONAS_REFERENCIA[punto_ref]
+    st.selectbox(
+        "Zona de referencia rápida:",
+        list(ZONAS_REFERENCIA.keys()),
+        key="zona_ref_box",
+        on_change=actualizar_desde_referencia,
+    )
 
-    lat_in = st.number_input("Latitud", value=lat_def, format="%.4f", step=0.0010)
-    lon_in = st.number_input("Longitud", value=lon_def, format="%.4f", step=0.0010)
+    lat_in = st.number_input("Latitud", key="lat_sel", format="%.4f", step=0.0010)
+    lon_in = st.number_input("Longitud", key="lon_sel", format="%.4f", step=0.0010)
     dia_in = st.selectbox("Día de la semana", ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"], index=5)
     hora_in = st.slider("Franja horaria (0 a 23 hs)", min_value=0, max_value=23, value=23)
 
@@ -192,82 +212,11 @@ with tab_pred:
 
     with col_mapa:
         st.subheader("Mapa Interactivo de CABA")
-        st.caption("Podés hacer clic directamente sobre cualquier punto del mapa para actualizar las coordenadas.")
+        st.caption("Hacé clic sobre cualquier punto del mapa para mover el marcador y evaluar esa celda.")
         m = folium.Map(location=[lat_in, lon_in], zoom_start=13, tiles="OpenStreetMap")
 
         top_celdas = df_zonas[df_zonas["delitos_nocturnos"] > 0].nlargest(120, "delitos_nocturnos")
         for _, r in top_celdas.iterrows():
             color = "#d9534f" if str(r.get("nivel_incidencia")) == "Alto" else "#f0ad4e"
             folium.Rectangle(
-                bounds=[[r["lat_min"], r["lon_min"]], [r["lat_max"], r["lon_max"]]],
-                color=color,
-                weight=1,
-                fill=True,
-                fill_opacity=0.25,
-                tooltip=f"Zona {r.get('zona_id', '')} | Delitos nocturnos: {int(r['delitos_nocturnos'])}",
-            ).add_to(m)
-
-        folium.Marker([lat_in, lon_in], popup="Punto consultado", icon=folium.Icon(color="blue", icon="info-sign")).add_to(m)
-        map_data = st_folium(m, height=440, width="100%")
-
-        if map_data and map_data.get("last_clicked"):
-            lat_in = round(map_data["last_clicked"]["lat"], 4)
-            lon_in = round(map_data["last_clicked"]["lng"], 4)
-            st.info(f"Coordenada seleccionada en mapa: **{lat_in}, {lon_in}**")
-
-    with col_res:
-        st.subheader("Resultado del Modelo")
-        zona_query = f"{lat_in:.4f}_{lon_in:.4f}"
-
-        if st.button("🚀 Evaluar Riesgo de la Zona", type="primary", use_container_width=True):
-            try:
-                if "Apify" in modo:
-                    if not apify_token or not apify_actor_id:
-                        st.error("Completá tu APIFY_TOKEN y Actor ID en el panel izquierdo.")
-                        st.stop()
-                    with st.spinner("Consultando Actor en Apify..."):
-                        res = predecir_apify(apify_token, apify_actor_id, zona_query, dia_in, hora_in)
-                else:
-                    res = predecir_local(df_zonas, artefacto, lat_in, lon_in, dia_in, hora_in)
-
-                st.session_state["ultimo_resultado"] = res
-            except Exception as e:
-                st.error(f"Error al consultar el modelo: {e}")
-
-        res = st.session_state.get("ultimo_resultado") or predecir_local(df_zonas, artefacto, lat_in, lon_in, dia_in, hora_in)
-
-        nivel = res["nivel_incidencia_estimado"]
-        color_badge = {"Alto": "🔴", "Medio": "🟠", "Bajo": "🟢"}.get(nivel, "⚪")
-
-        st.metric("Nivel de Riesgo Estimado", f"{color_badge} {nivel.upper()}", f"Confianza: {res['confianza_modelo']*100:.1f}%")
-
-        c1, c2 = st.columns(2)
-        c1.metric("Luminosidad Satelital", f"{res['luminosidad_promedio']} nW", res["clasificacion_luminosidad"])
-        c2.metric("Delitos Nocturnos (2024)", f"{res['delitos_nocturnos_historicos']}", f"Celda {res['zona_id']}")
-
-        st.caption(f"Motor: `{res['modelo_utilizado']}` | Zona válida en grilla: `{res['zona_valida_en_dataset']}`")
-
-        with st.expander("Ver respuesta JSON cruda (formato API Apify)"):
-            st.json(res)
-
-with tab_eda:
-    st.subheader("Resumen Ejecutivo del Territorio (1.600 celdas)")
-    k1, k2, k3 = st.columns(3)
-    k1.metric("Total Celdas Analizadas", f"{len(df_zonas):,}")
-    k2.metric("Total Delitos Nocturnos", f"{int(df_zonas['delitos_nocturnos'].sum()):,}")
-    k3.metric("Luminosidad Media CABA", f"{df_zonas['luminosidad_promedio'].mean():.2f}")
-
-    c_left, c_right = st.columns(2)
-    with c_left:
-        st.markdown("**Distribución por Nivel de Incidencia**")
-        if "nivel_incidencia" in df_zonas.columns:
-            resumen_inc = (
-                df_zonas.groupby("nivel_incidencia", as_index=False)
-                .agg(celdas=("delitos_nocturnos", "count"), delitos_totales=("delitos_nocturnos", "sum"))
-            )
-            st.dataframe(resumen_inc, use_container_width=True, hide_index=True)
-
-    with c_right:
-        st.markdown("**Top 10 Celdas con Mayor Incidencia Nocturna**")
-        cols_top = [c for c in ["zona_id", "delitos_nocturnos", "luminosidad_promedio", "nivel_incidencia"] if c in df_zonas.columns]
-        st.dataframe(df_zonas.sort_values("delitos_nocturnos", ascending=False).head(10)[cols_top], use_container_width=True, hide_index=True)
+                bounds=[[r["lat_min"],
