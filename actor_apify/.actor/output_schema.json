@@ -1,0 +1,11 @@
+{
+  "actorOutputSchemaVersion": 1,
+  "title": "Resultados Inteligencia Territorial CABA (ETL, EDA e Inferencia)",
+  "properties": {
+    "dataset": {
+      "type": "string",
+      "title": "Resultados procesados",
+      "template": "{{links.apiDefaultDatasetUrl}}/items"
+    }
+  }
+}

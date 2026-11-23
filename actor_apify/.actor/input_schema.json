@@ -1,0 +1,70 @@
+{
+  "title": "Inteligencia Territorial CABA - API Unificada (ETL, EDA e Inferencia)",
+  "type": "object",
+  "schemaVersion": 1,
+  "properties": {
+    "operation": {
+      "title": "Operación a ejecutar",
+      "type": "string",
+      "description": "Seleccioná el producto o etapa del pipeline: 'etl', 'eda' o 'inference'.",
+      "default": "inference",
+      "editor": "select",
+      "enum": ["etl", "eda", "inference"],
+      "enumTitles": [
+        "ETL - Limpieza y armado de grilla territorial",
+        "EDA - Estadísticas, terciles y tablas para Dashboard",
+        "Inference - Predicción de incidencia por zona y horario"
+      ]
+    },
+    "raw_records": {
+      "title": "Registros Crudos (para ETL)",
+      "type": "array",
+      "description": "Lista de registros crudos provenientes de delitos_2024.csv (enviados por Make desde Drive/raw).",
+      "default": [],
+      "editor": "json"
+    },
+    "clean_records": {
+      "title": "Registros Limpios (para EDA)",
+      "type": "array",
+      "description": "Lista de celdas limpias generadas por el ETL (enviadas por Make desde Drive/limpio).",
+      "default": [],
+      "editor": "json"
+    },
+    "eda_tabla": {
+      "title": "Tabla específica de salida EDA",
+      "type": "string",
+      "description": "Qué resumen devolver en modo EDA: 'all', 'incidencia' (csv_1), 'top_zonas' (csv_2) o 'luminosidad' (csv_3).",
+      "default": "all",
+      "editor": "select",
+      "enum": ["all", "incidencia", "top_zonas", "luminosidad"]
+    },
+    "zona_id": {
+      "title": "Zona ID (Inference individual)",
+      "type": "string",
+      "description": "Identificador latitud_longitud de la celda geográfica en CABA.",
+      "default": "-34.5375_-58.4595",
+      "editor": "textfield"
+    },
+    "dia_semana": {
+      "title": "Día de la semana (Inference individual)",
+      "type": "string",
+      "description": "Día a evaluar.",
+      "default": "Viernes",
+      "editor": "textfield"
+    },
+    "franja_horaria": {
+      "title": "Franja horaria 0-23 (Inference individual)",
+      "type": "integer",
+      "description": "Hora del día (0 a 23).",
+      "default": 21,
+      "editor": "number"
+    },
+    "bulk_items": {
+      "title": "Consultas por lote (Inference bulk)",
+      "type": "array",
+      "description": "Lista de consultas para predicción masiva.",
+      "default": [],
+      "editor": "json"
+    }
+  }
+}
