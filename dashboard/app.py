@@ -177,6 +177,8 @@ def actualizar_desde_referencia():
     st.session_state["lon_sel"] = lon_r
     st.session_state["ultimo_resultado"] = None
 
+def limpiar_resultado():
+    st.session_state["ultimo_resultado"] = None
 
 # --- INTERFAZ PRINCIPAL ---
 df_zonas = cargar_datos_locales()
@@ -208,8 +210,19 @@ with st.sidebar:
 
     lat_in = st.number_input("Latitud", key="lat_sel", format="%.4f", step=0.0010)
     lon_in = st.number_input("Longitud", key="lon_sel", format="%.4f", step=0.0010)
-    dia_in = st.selectbox("Día de la semana", ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"], index=5)
-    hora_in = st.slider("Franja horaria (0 a 23 hs)", min_value=0, max_value=23, value=23)
+    dia_in = st.selectbox(
+        "Día de la semana",
+        ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"],
+        index=5,
+        on_change=limpiar_resultado,
+    )
+    hora_in = st.slider(
+        "Franja horaria (0 a 23 hs)",
+        min_value=0,
+        max_value=23,
+        value=23,
+        on_change=limpiar_resultado,
+    )
 
 tab_pred, tab_eda = st.tabs(["🔮 Producto 2: Predicción de Riesgo (Inference)", "📊 Producto 1: Exploración Territorial (Analytics)"])
 
@@ -281,7 +294,7 @@ with tab_pred:
         c1.metric("Luminosidad Satelital", f"{res['luminosidad_promedio']} nW", res["clasificacion_luminosidad"])
         c2.metric("Delitos Nocturnos (2024)", f"{res['delitos_nocturnos_historicos']}", f"Celda {res['zona_id']}")
 
-        st.caption(f"Motor: `{res['modelo_utilizado']}` | Zona válida en grilla: `{res['zona_valida_en_dataset']}`")
+        # st.caption(f"Motor: `{res['modelo_utilizado']}` | Zona válida en grilla: `{res['zona_valida_en_dataset']}`")
 
         with st.expander("Ver respuesta JSON cruda (formato API Apify)"):
             st.json(res)
