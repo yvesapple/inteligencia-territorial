@@ -193,7 +193,7 @@ with tab_pred:
     with col_mapa:
         st.subheader("Mapa Interactivo de CABA")
         st.caption("Podés hacer clic directamente sobre cualquier punto del mapa para actualizar las coordenadas.")
-        m = folium.Map(location=[lat_in, lon_in], zoom_start=13, tiles="CartoDB positron")
+        m = folium.Map(location=[lat_in, lon_in], zoom_start=13, tiles="OpenStreetMap")
 
         top_celdas = df_zonas[df_zonas["delitos_nocturnos"] > 0].nlargest(120, "delitos_nocturnos")
         for _, r in top_celdas.iterrows():
