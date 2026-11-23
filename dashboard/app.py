@@ -164,6 +164,12 @@ if "lon_sel" not in st.session_state:
 if "ultimo_clic" not in st.session_state:
     st.session_state["ultimo_clic"] = None
 
+# Si hubo un clic nuevo en el mapa en la corrida anterior, actualizar ANTES de instanciar widgets
+if "pendiente_clic" in st.session_state and st.session_state["pendiente_clic"] is not None:
+    st.session_state["lat_sel"], st.session_state["lon_sel"] = st.session_state["pendiente_clic"]
+    st.session_state["pendiente_clic"] = None
+    st.session_state["ultimo_resultado"] = None
+
 
 def actualizar_desde_referencia():
     lat_r, lon_r = ZONAS_REFERENCIA[st.session_state["zona_ref_box"]]
@@ -242,9 +248,7 @@ with tab_pred:
             )
             if clic_actual != st.session_state["ultimo_clic"]:
                 st.session_state["ultimo_clic"] = clic_actual
-                st.session_state["lat_sel"] = clic_actual[0]
-                st.session_state["lon_sel"] = clic_actual[1]
-                st.session_state["ultimo_resultado"] = None
+                st.session_state["pendiente_clic"] = clic_actual
                 st.rerun()
 
     with col_res:
