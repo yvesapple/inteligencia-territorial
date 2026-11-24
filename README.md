@@ -116,3 +116,13 @@ Por cada consulta procesada, el servicio devuelve un objeto JSON estructurado co
 * **`confianza_modelo` / `modelo_utilizado`:** Probabilidad asociada a la clase predicha e identificador del modelo entrenado.
 * **`luminosidad_promedio` / `clasificacion_luminosidad`:** Índice de radiancia nocturna (nW) y su categorización (`Baja`, `Media`, `Alta`).
 * **`delitos_nocturnos_historicos` / `patron_historico`:** Conteo histórico de delitos nocturnos registrados en la celda y resumen descriptivo.
+
+---
+
+## 🔄 Automatización con Make
+### Escenario 1: Producto 1 — Analytics (ETL + EDA)
+<img width="1622" height="443" alt="image" src="https://github.com/user-attachments/assets/1ac96feb-072d-4563-ae30-d170dded6592" />
+<img width="1351" height="449" alt="image" src="https://github.com/user-attachments/assets/715678d8-97ec-46d6-b89c-e86a7b8a5b29" />
+
+### Escenario 2: Producto 2 — Inference (Predicción de Riesgo)
+<img width="1778" height="428" alt="image" src="https://github.com/user-attachments/assets/4aed151a-6231-4d6e-a5fd-4d797a47b65e" />
